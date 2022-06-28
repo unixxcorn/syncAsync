@@ -13,22 +13,25 @@ const multibar = new cliProgress.MultiBar({
     format: '{progress} | {color}{bar}\x1b[0m | {percentage}% || {value}/{total}',
 }, cliProgress.Presets.shades_classic);
 
-const totalTask = 20
+const totalTask = 10
 const totalLoop = 1000
-const delay = 10
+const delay = 5
 const syncShift = 0.5
+const syncFunction: Array<() => Promise<void>> = []
+const asyncFunction: Array<() => Promise<void>> = []
+
+for (let task = 0; task < totalTask; task++) {
+    syncFunction.push(loop(multibar, totalLoop, delay, `sync  ${pad(task, 2)}`, '\x1b[31m', syncShift))
+    asyncFunction.push(loop(multibar, totalLoop, delay, `async ${pad(task, 2)}`))
+}
 
 const syncLoop = async () => {
-    for (let task = 0; task < totalTask; task++) {
-        await loop(multibar, totalLoop, delay, `sync  ${pad(task, 2)}`, '\x1b[31m', syncShift)
-
+    for (const fn of syncFunction) {
+        await fn()
     }
 }
 const asyncLoop = async () => {
-    for (let task = 0; task < totalTask; task++) {
-        loop(multibar, totalLoop, delay, `async ${pad(task, 2)}`)
-
-    }
+    await Promise.all(asyncFunction.map(x => x()))
 }
 
 syncLoop()
